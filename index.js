@@ -64,11 +64,11 @@ app.use(express.json());
 
 // distributing frontend
 // app.use('/admin', express.static('build'));
-app.use("/", express.static("build"));
 // app.use('/news', express.static('News'));
 // app.use('/projects', express.static('Projects'));
 // app.use('/assets', express.static('assets'));
-// app.use(express.static(path.join(__dirname, '/build')));
+app.use(express.static(path.join(__dirname, "/build")));
+app.use("/static", express.static(__dirname + "/build"));
 // app.get('*', (req, res) => {
 //   res.sendFile(path.join(__dirname + '/build/index.html'));
 // });
