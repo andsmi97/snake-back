@@ -18,7 +18,10 @@ const socketIo = require("socket.io");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
-
+// import { Snake } from "./snake";
+const { Snake } = require("./snake");
+const { clear } = require("console");
+const { GAME_STATE } = require("./constants");
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -83,30 +86,89 @@ process.on("uncaughtException", (err) => {
   console.log(err);
 });
 
+// TIMER LOGIC
+// //ending game by timer
+// useEffect(() => {
+//   if (winner !== "none") {
+//     setTimerStatus(false);
+//   }
+// }, [winner]);
+
+// //countdown
+// useEffect(() => {
+//   let timer1 = setInterval(() => {
+//     if (timerStatus && time > 0) {
+//       setTime(time - 1);
+//     }
+//     if (time === 0) {
+//       game.stopGame();
+//       setTimerStatus(false);
+//     }
+//   }, 1000);
+
+//   return () => {
+//     clearInterval(timer1);
+//   };
+// }, [timerStatus, time]);
+
+const game = new Snake();
+let gameTimer;
+let countDownTimer;
+let countDownValue = 60;
+
+const UpdateAndSendGameState = () => {
+  if (countDownValue === 0) {
+    game.stopGame();
+    clearInterval(gameTimer);
+    clearInterval(countDownTimer);
+  } else {
+    let currentStatus = game.update();
+    if (currentStatus !== GAME_STATE.PLAY) {
+      game.stopGame();
+      clearInterval(gameTimer);
+      clearInterval(countDownTimer);
+    }
+  }
+  io.sockets.emit("gameState", { ...game.state, time: countDownValue });
+};
+
 io.on("connection", (socket) => {
-  // const actionsEmitter = setInterval(async () => {
-  socket.on("action", (data) => {
-    console.log(data);
-    io.sockets.emit("action", data);
+  socket.on("action", ({ player, direction }) => {
+    game.changeDirection(player, direction);
   });
+
   socket.on("start", (data) => {
-    io.sockets.emit("start", data);
+    game.startGame();
+    clearInterval(countDownTimer);
+    clearInterval(gameTimer);
+    countDownTimer = setInterval(() => (countDownValue -= 1), 1000);
+    gameTimer = setInterval(UpdateAndSendGameState, 200);
   });
+
   socket.on("pause", (message) => {
-    io.sockets.emit("pause", message);
+    clearInterval(gameTimer);
+    game.pauseGame();
+    io.sockets.emit("gameState", { ...game.state, time: countDownValue });
   });
+
   socket.on("reset", (message) => {
-    io.sockets.emit("reset", message);
+    game.resetGame();
+    countDownValue = 60;
+    clearInterval(gameTimer);
+    clearInterval(countDownTimer);
+    io.sockets.emit("gameState", { ...game.state, time: countDownValue });
   });
+
   socket.on("continue", (message) => {
-    io.sockets.emit("continue", message);
+    game.continueGame();
+    clearInterval(gameTimer);
+    gameTimer = setInterval(UpdateAndSendGameState, 200);
   });
-  // }, 3000);
 
   socket.on("disconnect", () => {
-    // clearInterval(actionsEmitter);
+    clearInterval(gameTimer);
+    clearInterval(countDownTimer);
   });
-  socket.on("connect", () => {});
 });
 
 const serverWithSocket = server.listen(process.env.RUNNING_PORT, () => {

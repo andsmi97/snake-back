@@ -1,0 +1,15 @@
+module.exports = {
+  RIGHT_BORDER: 250,
+  BOTTOM_BORDER: 250,
+  BORDER_SIZE: 250,
+  TOP_BORDER: 0,
+  LEFT_BORDER: 0,
+  PLAYER_SIZE: 10,
+  DIRECTIONS: { LEFT: "LEFT", RIGHT: "RIGHT", UP: "UP", DOWN: "DOWN" },
+  GAME_STATE: {
+    PLAY: "PLAY",
+    PAUSE: "PAUSE",
+    STOP: "STOP",
+    END: "END",
+  },
+};
