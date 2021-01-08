@@ -124,7 +124,6 @@ const UpdateAndSendGameState = () => {
   } else {
     let currentStatus = game.update();
     if (currentStatus !== GAME_STATE.PLAY) {
-      game.stopGame();
       clearInterval(gameTimer);
       clearInterval(countDownTimer);
     }

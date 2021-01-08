@@ -14,6 +14,7 @@ class Snake {
     gameStatus: GAME_STATE.STOP,
     winner: "none", // one of "none", "player", "player2"
     player: {
+      nextSteps: [],
       currentPoints: 0,
       color: "#2196f3",
       direction: DIRECTIONS.RIGHT,
@@ -26,6 +27,7 @@ class Snake {
       ],
     },
     player2: {
+      nextSteps: [],
       currentPoints: 0,
       color: "#00b248",
       direction: DIRECTIONS.LEFT,
@@ -93,7 +95,6 @@ class Snake {
       (this.isInverseDirection("player", this.state.player2.direction) &&
         this.distanceBetweenHeads() === PLAYER_SIZE)
     ) {
-      console.log("draw");
       return true;
     }
     return false;
@@ -106,6 +107,11 @@ class Snake {
     return "player";
   };
 
+  addAction = (player, direction) => {
+    if (this.state[player].nextSteps.length < 2) {
+      this.state[player].nextSteps.push(direction);
+    }
+  };
   /**
    * Checks if there is collision with itself
    * @returns {"player"|"player2"|"none"|"draw"} isCollision
@@ -289,6 +295,12 @@ class Snake {
           this.state.winner = this.getOtherPlayer(result);
         }
         return;
+      }
+      for (let p = 0; p < this.players.length; p++) {
+        let player = this.players[p];
+        if (this.state[player].nextSteps.length > 0) {
+          this.changeDirection(player, this.state[player].nextSteps.shift());
+        }
       }
       this.autoMove();
       this.eatFood();
