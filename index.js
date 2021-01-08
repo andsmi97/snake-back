@@ -61,7 +61,7 @@ app.use(express.json());
 
 // distributing frontend
 // app.use('/admin', express.static('build'));
-// app.use('/', express.static('ozerodom.ru'));
+app.use("/", express.static("public"));
 // app.use('/news', express.static('News'));
 // app.use('/projects', express.static('Projects'));
 // app.use('/assets', express.static('assets'));
