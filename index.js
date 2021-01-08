@@ -133,7 +133,7 @@ const UpdateAndSendGameState = () => {
 
 io.on("connection", (socket) => {
   socket.on("action", ({ player, direction }) => {
-    game.changeDirection(player, direction);
+    game.addAction(player, direction);
   });
 
   socket.on("start", (data) => {
