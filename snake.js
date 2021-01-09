@@ -6,14 +6,16 @@ const {
   LEFT_BORDER,
   TOP_BORDER,
   GAME_STATE,
+  BORDER_SIZE,
 } = require("./constants.js");
-
+const { Graph, astar } = require("./astar");
 class Snake {
   players = ["player", "player2"];
   initialState = {
     gameStatus: GAME_STATE.STOP,
     winner: "none", // one of "none", "player", "player2"
     player: {
+      AI: false,
       nextSteps: [],
       currentPoints: 0,
       color: "#2196f3",
@@ -27,6 +29,7 @@ class Snake {
       ],
     },
     player2: {
+      AI: true,
       nextSteps: [],
       currentPoints: 0,
       color: "#00b248",
@@ -39,14 +42,157 @@ class Snake {
         },
       ],
     },
+    player3: {
+      AI: false,
+      nextSteps: [],
+      currentPoints: 0,
+      color: "#651fff",
+      direction: DIRECTIONS.RIGHT,
+      speed: 10,
+      positions: [
+        {
+          x: 100,
+          y: 100,
+        },
+      ],
+    },
     food: {
-      x: 0,
-      y: 0,
+      x: 55,
+      y: 105,
     },
   };
   state = JSON.parse(JSON.stringify(this.initialState));
   initialized = false;
   constructor() {}
+
+  getStateForAStar = (player) => {
+    let board = Array(BORDER_SIZE / PLAYER_SIZE)
+      .fill()
+      .map(() => Array(BORDER_SIZE / PLAYER_SIZE).fill(1));
+    this.players.forEach((p) => {
+      this.state[p].positions.forEach((position) => {
+        //not just added tail
+        if (position.x !== BORDER_SIZE || position.y !== BORDER_SIZE) {
+          board[position.x / PLAYER_SIZE][position.y / PLAYER_SIZE] = 0;
+        }
+      });
+    });
+    return {
+      board,
+      head: {
+        x: this.state[player].positions[0].x / PLAYER_SIZE,
+        y: this.state[player].positions[0].y / PLAYER_SIZE,
+      },
+      food: {
+        x: (this.state.food.x - 5) / PLAYER_SIZE,
+        y: (this.state.food.y - 5) / PLAYER_SIZE,
+      },
+    };
+  };
+
+  getClosestPathToFood = (player) => {
+    let state = this.getStateForAStar(player);
+    let graph = new Graph(state.board);
+    let start = graph.grid[state.head.x][state.head.y];
+    let end = graph.grid[state.food.x][state.food.y];
+    let result = astar.search(graph, start, end, {
+      diagonal: false,
+    });
+    return result.map((point) => {
+      return { x: point.x, y: point.y };
+    });
+  };
+
+  calculateNextPosition = (player) => {
+    let x = this.state[player].positions[0].x;
+    let y = this.state[player].positions[0].y;
+    let direction = this.state[player].direction;
+    switch (direction) {
+      case DIRECTIONS.LEFT:
+        if (x - this.state[player].speed >= LEFT_BORDER) {
+          x -= this.state[player].speed;
+        } else {
+          x = RIGHT_BORDER - PLAYER_SIZE;
+        }
+        break;
+      case DIRECTIONS.RIGHT:
+        if (
+          x + this.state[player].speed <=
+          RIGHT_BORDER - this.state[player].speed
+        ) {
+          x += this.state[player].speed;
+        } else {
+          x = LEFT_BORDER;
+        }
+        break;
+      case DIRECTIONS.UP:
+        if (y - this.state[player].speed >= TOP_BORDER) {
+          y -= this.state[player].speed;
+        } else {
+          y = BOTTOM_BORDER - PLAYER_SIZE;
+        }
+        break;
+      case DIRECTIONS.DOWN:
+        if (
+          y + this.state[player].speed <=
+          BOTTOM_BORDER - this.state[player].speed
+        ) {
+          y += this.state[player].speed;
+        } else {
+          y = TOP_BORDER;
+        }
+        break;
+      default:
+        break;
+    }
+    return { x, y };
+  };
+
+  calculateBestDirection = (player, path) => {
+    let direction = this.state[player].direction;
+    let bestNextPlace = path[0];
+    let nextPlace = {
+      x: this.state[player].positions[0].x / 10,
+      y: this.state[player].positions[0].y / 10,
+    };
+    let { x, y } = {
+      x: bestNextPlace.x - nextPlace.x,
+      y: bestNextPlace.y - nextPlace.y,
+    };
+    if (x === 1) {
+      if (direction === DIRECTIONS.LEFT) {
+        return DIRECTIONS.UP;
+      }
+      return DIRECTIONS.RIGHT;
+    } else if (x === -1) {
+      if (direction === DIRECTIONS.RIGHT) {
+        return DIRECTIONS.DOWN;
+      }
+      return DIRECTIONS.LEFT;
+    } else if (y === -1) {
+      if (direction === DIRECTIONS.DOWN) {
+        return DIRECTIONS.LEFT;
+      }
+      return DIRECTIONS.UP;
+    } else if (y === 1) {
+      if (direction === DIRECTIONS.UP) {
+        return DIRECTIONS.RIGHT;
+      }
+      return DIRECTIONS.DOWN;
+    } else {
+      return this.state[player].direction;
+    }
+  };
+
+  calculateNextStepAI = () => {
+    this.players.forEach((player) => {
+      if (this.state[player].AI) {
+        let path = this.getClosestPathToFood(player);
+        // console.log(this.calculateBestDirection(player, path));
+        this.changeDirection(player, this.calculateBestDirection(player, path));
+      }
+    });
+  };
 
   isInverseDirection = (player, direction) => {
     switch (direction) {
@@ -302,6 +448,7 @@ class Snake {
           this.changeDirection(player, this.state[player].nextSteps.shift());
         }
       }
+      this.calculateNextStepAI();
       this.autoMove();
       this.eatFood();
     }

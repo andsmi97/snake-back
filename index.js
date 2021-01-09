@@ -18,9 +18,9 @@ const socketIo = require("socket.io");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
-// import { Snake } from "./snake";
+
 const { Snake } = require("./snake");
-const { clear } = require("console");
+
 const { GAME_STATE } = require("./constants");
 const app = express();
 const server = http.createServer(app);
@@ -86,35 +86,57 @@ process.on("uncaughtException", (err) => {
   console.log(err);
 });
 
-// TIMER LOGIC
-// //ending game by timer
-// useEffect(() => {
-//   if (winner !== "none") {
-//     setTimerStatus(false);
-//   }
-// }, [winner]);
-
-// //countdown
-// useEffect(() => {
-//   let timer1 = setInterval(() => {
-//     if (timerStatus && time > 0) {
-//       setTime(time - 1);
-//     }
-//     if (time === 0) {
-//       game.stopGame();
-//       setTimerStatus(false);
-//     }
-//   }, 1000);
-
-//   return () => {
-//     clearInterval(timer1);
-//   };
-// }, [timerStatus, time]);
-
 const game = new Snake();
 let gameTimer;
 let countDownTimer;
 let countDownValue = 60;
+
+// function A*(start, goal, f)
+//      % множество уже пройденных вершин
+//      var closed := the empty set
+//      % множество частных решений
+//      var open := make_queue(f)
+//      enqueue(open, path(start))
+//      while open is not empty
+//          var p := remove_first(open)
+//          var x := the last node of p
+//          if x in closed
+//              continue
+//          if x = goal
+//              return p
+//          add(closed, x)
+//          % добавляем смежные вершины
+//          foreach y in successors(x)
+//              enqueue(open, add_to_path(p, y))
+//      return failure
+
+// let graph = new Graph([
+//   [1, 1, 1, 1],
+//   [0, 1, 1, 0],
+//   [0, 0, 1, 1],
+// ]);
+// let start = graph.grid[0][0];
+// let end = graph.grid[1][2];
+
+// result is an array containing the shortest path
+// var graphDiagonal = new Graph([
+//   [1,1,1,1],
+//   [0,1,1,0],
+//   [0,0,1,1]
+// ], { diagonal: true });
+
+// var start = graphDiagonal.grid[0][0];
+// var end = graphDiagonal.grid[1][2];
+// var resultWithDiagonals = astar.search(graphDiagonal, start, end, { heuristic: astar.heuristics.diagonal });
+// // Weight can easily be added by increasing the values within the graph, and where 0 is infinite (a wall)
+// var graphWithWeight = new Graph([
+//   [1,1,2,30],
+//   [0,4,1.3,0],
+//   [0,0,5,1]
+// ]);
+// var startWithWeight = graphWithWeight.grid[0][0];
+// var endWithWeight = graphWithWeight.grid[1][2];
+// var resultWithWeight = astar.search(graphWithWeight, startWithWeight, endWithWeight);
 
 const UpdateAndSendGameState = () => {
   if (countDownValue === 0) {
